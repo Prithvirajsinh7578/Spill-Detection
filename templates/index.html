@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Spill Detection</title>
+
+<style>
+    /* ---------------- Body & Background ---------------- */
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        color: #fff;
+        scroll-behavior: smooth;
+    }
+
+    /* ---------------- Header ---------------- */
+    header {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(10px);
+        padding: 15px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+
+    nav a {
+        color: #fff;
+        margin-left: 25px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    nav a:hover {
+        color: #0ff;
+    }
+
+    /* ---------------- Sections ---------------- */
+    section {
+        width: 90%;
+        max-width: 900px;
+        margin: 80px auto 50px auto; /* reduced top margin */
+        padding: 30px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        opacity: 0;
+        transform: translateY(50px);
+        transition: all 0.8s ease-out;
+        scroll-margin-top: 100px; /* ensures anchor links start below header */
+    }
+
+    section.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    section:hover {
+        transform: translateY(-5px);
+        transition: all 0.5s ease;
+    }
+
+    section h2 {
+        font-size: 26px;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #0ff;
+    }
+
+    /* ---------------- Buttons ---------------- */
+    button {
+        padding: 12px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: bold;
+        background: linear-gradient(45deg, #00ffff, #00cccc);
+        color: #000;
+        margin-top: 10px;
+        transition: all 0.3s ease;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 20px rgba(0,255,255,0.5);
+    }
+
+    /* ---------------- File Input ---------------- */
+    input[type="file"] {
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    input[type="file"]::file-selector-button {
+        background: linear-gradient(45deg, #00ffff, #00cccc);
+        color: #000;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-right: 10px;
+        transition: all 0.3s;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+        background: linear-gradient(45deg, #00cccc, #00ffff);
+        box-shadow: 0 5px 15px rgba(0,255,255,0.3);
+    }
+
+    /* ---------------- Images ---------------- */
+    .result-img, #liveFeed {
+        width: 100%;
+        max-height: 450px;
+        object-fit: contain;
+        border-radius: 15px;
+        margin-top: 20px;
+        border: 2px solid #0ff;
+        box-shadow: 0 5px 15px rgba(0,255,255,0.3);
+        transition: transform 0.3s ease;
+    }
+
+    .result-img:hover, #liveFeed:hover {
+        transform: scale(1.02);
+    }
+
+</style>
+</head>
+<body>
+
+<header>
+    <h1>💧 Spill Detection</h1>
+    <nav>
+        <a href="#upload">Upload Image</a>
+        <a href="#live">Live</a>
+    </nav>
+</header>
+
+<!-- IMAGE UPLOAD SECTION -->
+<section id="upload">
+    <h2>Upload Image</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" required>
+        <button type="submit">Detect</button>
+    </form>
+
+    {% if output_image %}
+    <img src="/static/{{ output_image }}" class="result-img" alt="Detection Result">
+    {% endif %}
+</section>
+
+<!-- LIVE DETECTION SECTION -->
+<section id="live">
+    <h2>Live Camera Detection</h2>
+    <button id="startLive">Start Live Detection</button>
+    <img id="liveFeed" style="display:none;">
+</section>
+
+<script>
+    // ---------- Scroll Animation ----------
+    const sections = document.querySelectorAll("section");
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if(entry.isIntersecting){
+                entry.target.classList.add("show");
+            }
+        });
+    }, { threshold: 0.2 });
+    sections.forEach(section => observer.observe(section));
+
+    // ---------- Live Detection ----------
+    document.getElementById("startLive").onclick = () => {
+        const liveImg = document.getElementById("liveFeed");
+        liveImg.src = "/live"; // Flask endpoint
+        liveImg.style.display = "block";
+    };
+</script>
+
+</body>
+</html>
