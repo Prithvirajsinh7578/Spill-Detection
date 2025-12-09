@@ -167,12 +167,14 @@
     {% endif %}
 </section>
 
-<!-- LIVE DETECTION SECTION -->
+<!-- LIVE DETECTION SECTION USING PHONE CAMERA -->
 <section id="live">
-    <h2>Live Camera Detection</h2>
-    <button id="startLive">Start Live Detection</button>
-    <img id="liveFeed" style="display:none;">
+    <h2>Live Camera Detection (Phone)</h2>
+    <video id="camera" autoplay playsinline width="320" height="240"></video>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+    <img id="output" width="320" height="240" style="margin-top:10px;">
 </section>
+
 
 <script>
     // ---------- Scroll Animation ----------
@@ -186,12 +188,32 @@
     }, { threshold: 0.2 });
     sections.forEach(section => observer.observe(section));
 
-    // ---------- Live Detection ----------
-    document.getElementById("startLive").onclick = () => {
-        const liveImg = document.getElementById("liveFeed");
-        liveImg.src = "/live"; // Flask endpoint
-        liveImg.style.display = "block";
-    };
+   const video = document.getElementById("camera");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const output = document.getElementById("output");
+
+// Access phone camera
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => { video.srcObject = stream; })
+.catch(err => { console.error(err); });
+
+// Send frames to server continuously
+function sendFrame() {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(async (blob) => {
+        let formData = new FormData();
+        formData.append("frame", blob, "frame.jpg");
+        let resp = await fetch("/live_phone", { method: "POST", body: formData });
+        let blobResp = await resp.blob();
+        output.src = URL.createObjectURL(blobResp);
+        requestAnimationFrame(sendFrame);
+    }, "image/jpeg");
+}
+
+// Start streaming when video is ready
+video.addEventListener("play", sendFrame);
+
 </script>
 
 </body>
