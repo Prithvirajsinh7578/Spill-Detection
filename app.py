@@ -79,6 +79,27 @@ def gen_frames():
 def live():
     return Response(gen_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
+from flask import send_file
+from io import BytesIO
+import numpy as np
+
+@app.route("/live_phone", methods=["POST"])
+def live_phone():
+    file = request.files["frame"]
+    in_bytes = np.frombuffer(file.read(), np.uint8)
+    img = cv2.imdecode(in_bytes, cv2.IMREAD_COLOR)
+
+    results = model(img)[0]  # YOLO inference
+    for box in results.boxes:
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        score = float(box.conf[0])
+        label = f"Spill {score:.2f}"
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        cv2.putText(img, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
+
+    _, buffer = cv2.imencode(".jpg", img)
+    return send_file(BytesIO(buffer.tobytes()), mimetype="image/jpeg")
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
